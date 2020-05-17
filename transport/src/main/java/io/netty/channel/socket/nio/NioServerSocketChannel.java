@@ -43,6 +43,11 @@ import java.util.Map;
  * A {@link io.netty.channel.socket.ServerSocketChannel} implementation which uses
  * NIO selector based implementation to accept new connections.
  * 异步的服务器端 TCP Socket 连接
+ *
+ *  - 服务器 NioServerSocketChannel 的 pipeline 中添加的是 handler 与 ServerBootstrapAcceptor.
+ *  - 当有新的客户端连接请求时, ServerBootstrapAcceptor.channelRead 中负责新建此连接的 NioSocketChannel 并添加 childHandler 到 NioSocketChannel 对应的 pipeline 中, 并将此 channel 绑定到 workerGroup 中的某个 eventLoop 中.
+ *  - handler 是在 accept 阶段起作用, 它处理客户端的连接请求.
+ *  - childHandler 是在客户端连接建立以后起作用, 它负责客户端连接的 IO 交互.
  */
 public class NioServerSocketChannel extends AbstractNioMessageChannel
                              implements io.netty.channel.socket.ServerSocketChannel {
@@ -149,6 +154,8 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
 
         try {
             if (ch != null) {
+                //实例化一个 **NioSocketChannel**, 并且传入 NioServerSocketChannel 对象(即 this),
+                // 由此可知, 我们创建的这个 NioSocketChannel 的父 Channel 就是 NioServerSocketChannel 实例 .
                 buf.add(new NioSocketChannel(this, ch));
                 return 1;
             }
