@@ -71,7 +71,10 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
     protected AbstractChannel(Channel parent) {
         this.parent = parent;
         id = newId();
+        //初始化unsafe实例
+        //封装了对 Java 底层 Socket 的操作, 因此实际上是沟通 Netty 上层和 Java 底层的重要的桥梁.
         unsafe = newUnsafe();
+        //初始化pipeline，Each channel has its own pipeline and it is created automatically when a new channel is created.`
         pipeline = newChannelPipeline();
     }
 
@@ -462,6 +465,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 return;
             }
 
+            // 将 eventLoop 赋值给 Channel 的 eventLoop 属性,
             AbstractChannel.this.eventLoop = eventLoop;
 
             if (eventLoop.inEventLoop()) {

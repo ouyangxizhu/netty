@@ -61,6 +61,7 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
      *
      * @param parent            the parent {@link Channel} by which this instance was created. May be {@code null}
      * @param ch                the underlying {@link SelectableChannel} on which it operates
+     *ch 为刚才使用 newSocket 创建的  Java NIO SocketChannel, 因此生成的 NioSocketChannel 的 parent channel 是空的.
      */
     protected AbstractNioByteChannel(Channel parent, SelectableChannel ch) {
         super(parent, ch, SelectionKey.OP_READ);

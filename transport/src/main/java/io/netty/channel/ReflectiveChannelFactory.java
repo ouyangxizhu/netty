@@ -28,6 +28,9 @@ public class ReflectiveChannelFactory<T extends Channel> implements ChannelFacto
 
     private final Constructor<? extends T> constructor;
 
+    /**
+     * 构造器赋予了类变量
+     */
     public ReflectiveChannelFactory(Class<? extends T> clazz) {
         ObjectUtil.checkNotNull(clazz, "clazz");
         try {
@@ -38,9 +41,15 @@ public class ReflectiveChannelFactory<T extends Channel> implements ChannelFacto
         }
     }
 
+    /**
+     * 调用链
+     * Bootstrap.connect -> Bootstrap.doConnect -> AbstractBootstrap.initAndRegister
+     * @return
+     */
     @Override
     public T newChannel() {
         try {
+            //调用构造方法产生channel
             return constructor.newInstance();
         } catch (Throwable t) {
             throw new ChannelException("Unable to create Channel from class " + constructor.getDeclaringClass(), t);

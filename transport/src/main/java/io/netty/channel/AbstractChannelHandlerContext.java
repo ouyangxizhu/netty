@@ -527,6 +527,10 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
             return promise;
         }
 
+        //从  DefaultChannelPipeline 内的双向链表的 tail 开始,
+        // 不断向前寻找第一个 outbound 为 true 的 AbstractChannelHandlerContext,
+        // 然后调用它的 invokeConnect 方法
+        //findContextOutbound 中, 找到的 AbstractChannelHandlerContext 对象其实就是 head
         final AbstractChannelHandlerContext next = findContextOutbound(MASK_CONNECT);
         EventExecutor executor = next.executor();
         if (executor.inEventLoop()) {

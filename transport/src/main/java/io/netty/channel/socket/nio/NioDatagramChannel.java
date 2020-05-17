@@ -59,6 +59,7 @@ import java.util.Map;
  *
  * @see AddressedEnvelope
  * @see DatagramPacket
+ * 异步的 UDP 连接
  */
 public final class NioDatagramChannel
         extends AbstractNioMessageChannel implements io.netty.channel.socket.DatagramChannel {

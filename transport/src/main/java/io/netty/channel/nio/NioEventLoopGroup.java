@@ -108,6 +108,7 @@ public class NioEventLoopGroup extends MultithreadEventLoopGroup {
                              final SelectorProvider selectorProvider,
                              final SelectStrategyFactory selectStrategyFactory,
                              final RejectedExecutionHandler rejectedExecutionHandler) {
+        //最终都是调用父类的
         super(nThreads, executor, chooserFactory, selectorProvider, selectStrategyFactory, rejectedExecutionHandler);
     }
 

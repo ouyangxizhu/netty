@@ -243,6 +243,7 @@ public class Bootstrap extends AbstractBootstrap<Bootstrap, Channel> {
         // This method is invoked before channelRegistered() is triggered.  Give user handlers a chance to set up
         // the pipeline in its channelRegistered() implementation.
         final Channel channel = connectPromise.channel();
+        // 会在 event loop 线程中调用 Channel 的 connect 方法,
         channel.eventLoop().execute(new Runnable() {
             @Override
             public void run() {

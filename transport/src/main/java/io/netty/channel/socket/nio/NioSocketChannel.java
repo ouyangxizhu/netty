@@ -53,9 +53,11 @@ import static io.netty.channel.internal.ChannelUtils.MAX_BYTES_PER_GATHERING_WRI
 
 /**
  * {@link io.netty.channel.socket.SocketChannel} which uses NIO selector based implementation.
+ * 异步的客户端 TCP Socket 连接.
  */
 public class NioSocketChannel extends AbstractNioByteChannel implements io.netty.channel.socket.SocketChannel {
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(NioSocketChannel.class);
+    //jdk的nio包下的方法
     private static final SelectorProvider DEFAULT_SELECTOR_PROVIDER = SelectorProvider.provider();
 
     private static SocketChannel newSocket(SelectorProvider provider) {
@@ -76,6 +78,7 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
 
     /**
      * Create a new instance
+     * 调用 newSocket 来打开一个新的 Java NIO SocketChannel:
      */
     public NioSocketChannel() {
         this(DEFAULT_SELECTOR_PROVIDER);
@@ -102,6 +105,7 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
      * @param socket    the {@link SocketChannel} which will be used
      */
     public NioSocketChannel(Channel parent, SocketChannel socket) {
+        //调用父类的
         super(parent, socket);
         config = new NioSocketChannelConfig(this, socket.socket());
     }
@@ -311,7 +315,7 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
         }
 
         boolean success = false;
-        try {
+        try {//完成 Java NIO 层面上的 Socket 的连接
             boolean connected = SocketUtils.connect(javaChannel(), remoteAddress);
             if (!connected) {
                 selectionKey().interestOps(SelectionKey.OP_CONNECT);
@@ -440,6 +444,7 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
 
     @Override
     protected AbstractNioUnsafe newUnsafe() {
+        //这里重写父类的方法，变成nio的unsafe
         return new NioSocketChannelUnsafe();
     }
 

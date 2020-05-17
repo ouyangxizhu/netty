@@ -90,12 +90,17 @@ public class DefaultChannelPipeline implements ChannelPipeline {
     private boolean registered;
 
     protected DefaultChannelPipeline(Channel channel) {
+        //DefaultChannelPipeline 会将这个 NioSocketChannel 对象保存在channel 字段中.
         this.channel = ObjectUtil.checkNotNull(channel, "channel");
         succeededFuture = new SucceededChannelFuture(channel, null);
         voidPromise =  new VoidChannelPromise(channel, true);
 
-        tail = new TailContext(this);
-        head = new HeadContext(this);
+        //head 和 tail, 而这两个字段是一个双向链表的头和尾.
+        // 其实在 DefaultChannelPipeline 中, 维护了一个以 AbstractChannelHandlerContext 为节点的双向链表,
+        // 这个链表是 Netty 实现 Pipeline 机制的关键.
+        //下面这两个构造器都要调用抽象父类AbstractChannelHandlerContext的构造器
+        tail = new TailContext(this); //tail 是一个inboundHandler
+        head = new HeadContext(this);//header 是一个 outboundHandler
 
         head.next = tail;
         tail.prev = head;

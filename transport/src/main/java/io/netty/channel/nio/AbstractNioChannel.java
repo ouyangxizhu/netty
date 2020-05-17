@@ -77,6 +77,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
      * @param readInterestOp    the ops to set to receive data from the {@link SelectableChannel}
      */
     protected AbstractNioChannel(Channel parent, SelectableChannel ch, int readInterestOp) {
+        //继续调用父类
         super(parent);
         this.ch = ch;
         this.readInterestOp = readInterestOp;
@@ -377,6 +378,10 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         boolean selected = false;
         for (;;) {
             try {
+                //javaChannel() 这个方法返回的是一个 Java NIO SocketChannel,
+                // 这里我们将这个 SocketChannel 注册到与 eventLoop 关联的 selector 上了.
+                //并将 Channel 对应的 Java NIO SockerChannel 注册到一个 eventLoop 的 Selector 中,
+                // 且将当前 Channel 作为 attachment.
                 selectionKey = javaChannel().register(eventLoop().unwrappedSelector(), 0, this);
                 return;
             } catch (CancelledKeyException e) {

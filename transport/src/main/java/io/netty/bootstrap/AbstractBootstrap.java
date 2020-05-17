@@ -104,6 +104,9 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
      * The {@link Class} which is used to create {@link Channel} instances from.
      * You either use this or {@link #channelFactory(io.netty.channel.ChannelFactory)} if your
      * {@link Channel} implementation has no no-args constructor.
+     *
+     * 放入channel
+     * 这个方法其实就是初始化了一个 ReflectiveChannelFactory:
      */
     public B channel(Class<? extends C> channelClass) {
         return channelFactory(new ReflectiveChannelFactory<C>(
@@ -304,6 +307,15 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
         }
     }
 
+    /**
+     *  Channel 注册过程所做的工作就是将 Channel 与对应的 EventLoop 关联,
+     *  因此这也体现了, 在 Netty 中, 每个 Channel 都会关联一个特定的 EventLoop,
+     *  并且这个 Channel 中的所有 IO 操作都是在这个 EventLoop 中执行的;
+     *  当关联好 Channel 和 EventLoop 后, 会继续调用底层的 Java NIO SocketChannel 的 register 方法,
+     *  将底层的 Java NIO SocketChannel 注册到指定的 selector 中.
+     *  通过这两步, 就完成了 Netty Channel 的注册过程.
+     * @return
+     */
     final ChannelFuture initAndRegister() {
         Channel channel = null;
         try {
@@ -320,6 +332,8 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
             return new DefaultChannelPromise(new FailedChannel(), GlobalEventExecutor.INSTANCE).setFailure(t);
         }
 
+        //调用链如下:
+        //AbstractBootstrap.initAndRegister -> MultithreadEventLoopGroup.register -> SingleThreadEventLoop.register -> AbstractUnsafe.register
         ChannelFuture regFuture = config().group().register(channel);
         if (regFuture.cause() != null) {
             if (channel.isRegistered()) {
