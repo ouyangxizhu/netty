@@ -49,6 +49,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * Be aware that this class is marked as {@link Sharable} and so the implementation must be safe to be re-used.
  *
  * @param <C>   A sub-type of {@link Channel}
+ *
+ *  ChannelInitializer实现了 ChannelHandler
+ *  是在 Bootstrap.init 方法中添加到 ChannelPipeline 中的.
  */
 @Sharable
 public abstract class ChannelInitializer<C extends Channel> extends ChannelInboundHandlerAdapter {
@@ -75,12 +78,15 @@ public abstract class ChannelInitializer<C extends Channel> extends ChannelInbou
     public final void channelRegistered(ChannelHandlerContext ctx) throws Exception {
         // Normally this method will never be called as handlerAdded(...) should call initChannel(...) and remove
         // the handler.
+        //调用自己设置的匿名内部类ChannelInitializer的initChannel方法，然后将handler添加到pipline
         if (initChannel(ctx)) {
             // we called initChannel(...) so we need to call now pipeline.fireChannelRegistered() to ensure we not
             // miss an event.
             ctx.pipeline().fireChannelRegistered();
 
             // We are done with init the Channel, removing all the state for the Channel now.
+            //当添加了自定义的 ChannelHandler 后, 会删除 ChannelInitializer 这个 ChannelHandler,
+            // 即 "ctx.pipeline().remove(this)"
             removeState(ctx);
         } else {
             // Called initChannel(...) before which is the expected behavior, so just forward the event.

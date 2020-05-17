@@ -89,16 +89,22 @@ public class DefaultChannelPipeline implements ChannelPipeline {
      */
     private boolean registered;
 
+    /**
+     * 这是因为 HeadContext 和 TailContext 继承于 AbstractChannelHandlerContext 的同时
+     * 也实现了 ChannelHandler 接口了, 因此它们有 Context 和 Handler 的双重属性.
+     * @param channel
+     */
     protected DefaultChannelPipeline(Channel channel) {
         //DefaultChannelPipeline 会将这个 NioSocketChannel 对象保存在channel 字段中.
         this.channel = ObjectUtil.checkNotNull(channel, "channel");
         succeededFuture = new SucceededChannelFuture(channel, null);
         voidPromise =  new VoidChannelPromise(channel, true);
 
-        //head 和 tail, 而这两个字段是一个双向链表的头和尾.
+        //head 和 tail, 这两个字段是一个双向链表的头和尾.
         // 其实在 DefaultChannelPipeline 中, 维护了一个以 AbstractChannelHandlerContext 为节点的双向链表,
         // 这个链表是 Netty 实现 Pipeline 机制的关键.
         //下面这两个构造器都要调用抽象父类AbstractChannelHandlerContext的构造器
+        // head 和 tail 即是一个 ChannelHandler, 又是一个 ChannelHandlerContext.
         tail = new TailContext(this); //tail 是一个inboundHandler
         head = new HeadContext(this);//header 是一个 outboundHandler
 
@@ -204,8 +210,14 @@ public class DefaultChannelPipeline implements ChannelPipeline {
     public final ChannelPipeline addLast(EventExecutorGroup group, String name, ChannelHandler handler) {
         final AbstractChannelHandlerContext newCtx;
         synchronized (this) {
+
             checkMultiplicity(handler);
 
+            //如果不重复的话, 则为这个 Handler 创建一个对应的 DefaultChannelHandlerContext 实例,
+            // 并与之关联起来(Context 中有一个 handler 属性保存着对应的 Handler 实例).
+            //为了添加一个 handler 到 pipeline 中, 必须把此 handler 包装成 ChannelHandlerContext.
+            // 因此在下面的代码中我们可以看到新实例化了一个 newCtx 对象, 并将 handler 作为参数传递到构造方法中.
+            //filterName(name, handler) 检查此 handler 是否有重复的名字
             newCtx = newContext(group, filterName(name, handler), handler);
 
             addLast0(newCtx);
@@ -413,6 +425,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
         return name;
     }
 
+    //自动生成的名字的规则很简单, 就是 handler 的简单类名加上 "#0",
     private static String generateName0(Class<?> handlerType) {
         return StringUtil.simpleClassName(handlerType) + "#0";
     }
@@ -897,6 +910,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
 
     @Override
     public final ChannelPipeline fireChannelActive() {
+        //调用的是 head.fireChannelActive, `因此可以证明了, Inbound 事件在 Pipeline 中传输的起点是 head.`
         AbstractChannelHandlerContext.invokeChannelActive(head);
         return this;
     }
@@ -944,6 +958,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
 
     @Override
     public final ChannelFuture connect(SocketAddress remoteAddress) {
+        //当 outbound 事件(这里是 connect 事件)传递到 Pipeline 后, 它其实是以 tail 为起点开始传播的.
         return tail.connect(remoteAddress);
     }
 

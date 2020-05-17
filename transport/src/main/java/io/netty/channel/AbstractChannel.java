@@ -67,14 +67,19 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
      *
      * @param parent
      *        the parent of this channel. {@code null} if there's no parent.
+     *
+     * 实例化一个 Channel 时, 会伴随着一个 ChannelPipeline 的实例化,
      */
     protected AbstractChannel(Channel parent) {
         this.parent = parent;
         id = newId();
         //初始化unsafe实例
-        //封装了对 Java 底层 Socket 的操作, 因此实际上是沟通 Netty 上层和 Java 底层的重要的桥梁.
+        //封装了对 Java 底层 Socket 的操作, 实际上是沟通 Netty 上层和 Java 底层的重要的桥梁.
         unsafe = newUnsafe();
-        //初始化pipeline，Each channel has its own pipeline and it is created automatically when a new channel is created.`
+        //初始化pipeline，
+        // Each channel has its own pipeline and it is created automatically when a new channel is created.`
+        //初始化一个pipeline，并且把channel放到pipeline中的channel中，即将pipline和channel关联
+        //维护了一个以 AbstractChannelHandlerContext 为节点的双向链表, 这个链表是 Netty 实现 Pipeline 机制的关键.
         pipeline = newChannelPipeline();
     }
 
@@ -506,6 +511,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 pipeline.invokeHandlerAddedIfNeeded();
 
                 safeSetSuccess(promise);
+                //有channel注册，通知变化
                 pipeline.fireChannelRegistered();
                 // Only fire a channelActive if the channel has never been registered. This prevents firing
                 // multiple channel actives if the channel is deregistered and re-registered.

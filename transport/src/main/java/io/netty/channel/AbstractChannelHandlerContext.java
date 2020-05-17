@@ -146,6 +146,10 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
         return this;
     }
 
+    /**
+     * .fireXXX 的调用形式, 是 Netty 中 Pipeline 传递事件的常用方式, 我们以后会经常看到
+     * @param next
+     */
     static void invokeChannelRegistered(final AbstractChannelHandlerContext next) {
         EventExecutor executor = next.executor();
         if (executor.inEventLoop()) {
@@ -210,6 +214,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
         return this;
     }
 
+    //因此 channelActive Inbound 事件最终是在 tail 中处理的, 我们看一下它的处理方法
     static void invokeChannelActive(final AbstractChannelHandlerContext next) {
         EventExecutor executor = next.executor();
         if (executor.inEventLoop()) {
@@ -530,7 +535,13 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
         //从  DefaultChannelPipeline 内的双向链表的 tail 开始,
         // 不断向前寻找第一个 outbound 为 true 的 AbstractChannelHandlerContext,
         // 然后调用它的 invokeConnect 方法
-        //findContextOutbound 中, 找到的 AbstractChannelHandlerContext 对象其实就是 head
+        //这个方法中会调用 Context 所关联着的 ChannelHandler 的 connect 方法:
+        //直到 connect 事件传递到DefaultChannelPipeline 的双向链表的头节点, 即 head 中. 为什么会传递到 head 中呢?
+        // 回想一下, head 实现了 ChannelOutboundHandler, 因此它的 outbound 属性是 true.
+        //`因为 head 本身既是一个 ChannelHandlerContext, 又实现了 ChannelOutboundHandler 接口`,
+        // 因此当 connect 消息传递到 head 后, 会将消息转递到对应的 ChannelHandler 中处理,
+        // 而恰好, head 的 handler() 返回的就是 head 本身:
+        //因此最终 connect 事件是在 head 中处理的
         final AbstractChannelHandlerContext next = findContextOutbound(MASK_CONNECT);
         EventExecutor executor = next.executor();
         if (executor.inEventLoop()) {
@@ -549,6 +560,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
     private void invokeConnect(SocketAddress remoteAddress, SocketAddress localAddress, ChannelPromise promise) {
         if (invokeHandler()) {
             try {
+                //调用 Context 所关联着的 ChannelHandler 的 connect 方法:
                 ((ChannelOutboundHandler) handler()).connect(this, remoteAddress, localAddress, promise);
             } catch (Throwable t) {
                 notifyOutboundHandlerException(t, promise);
